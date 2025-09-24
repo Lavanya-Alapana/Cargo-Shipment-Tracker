@@ -2,21 +2,17 @@ const Shipment=require('../../models/shipment')
 const {ApiError} =require('../../src/utils/apiResponse')
 const haversineDistance = require("../utils/distance");
 
-
-async function createShipment(payload)
-{  
-  
-  if(!payload.currentLocation && payload.origin)
-  {
-        payload.currentLocation = { location: payload.origin, coordinates: {}, updatedAt: new Date() };
+async function createShipment(payload) {  
+  if (payload.origin && payload.originCoordinates) {
+    payload.routes = [
+      { location: payload.origin, coordinates: payload.originCoordinates, timestamp: new Date() }
+    ];
   }
 
-
-  const newshipment=await Shipment.create(payload)
-
- 
-  return newshipment
+  const newShipment = await Shipment.create(payload);
+  return newShipment;
 }
+
 async function getShipments()
 {
     const shipmentAll=await Shipment.find()
@@ -35,16 +31,27 @@ async function getShipmentById(id)
 
 async function updateShipmentLocation(id,location,coordinates)
 {
-   const shipment=await Shipment.findById(id)
+  const shipment = await Shipment.findOne({ shipmentId: id });
+
    if (!shipment) {
     throw new ApiError(404, "Shipment not found");
   }
+  if (!coordinates || typeof coordinates.lat !== "number" || typeof coordinates.lng !== "number") {
+  throw new ApiError(400, "Invalid coordinates");
+}
 
-   shipment.currentLocation={
+
+   shipment.routes.push({
     location,
     coordinates,
     updatedAt: new Date()
-   }
+   })
+
+   if (shipment.destinationCoordinates && coordinates) {
+    const distance = await haversineDistance(coordinates, shipment.destinationCoordinates);
+    const avgSpeed = 60; // km/h
+    shipment.eta = new Date(Date.now() + (distance / avgSpeed) * 60 * 60 * 1000);
+  }
 
    await shipment.save()
 
@@ -57,11 +64,10 @@ async function getETA(id) {
   const shipment = await Shipment.findById(id);
   if (!shipment) throw new ApiError(404, "Shipment not found");
 
-  const current = shipment.currentLocation;
+  const current = shipment.routes && shipment.routes.length>0? shipment.routes[shipment.routes.length - 1] : null;
   const destination =
-    shipment.routes && shipment.routes.length > 0
-      ? shipment.routes[shipment.routes.length - 1]
-      : null;
+   shipment.destinationCoordinates ||null
+      
 
 
   if (
@@ -70,16 +76,15 @@ async function getETA(id) {
     !current.coordinates.lat ||
     !current.coordinates.lng ||
     !destination ||
-    !destination.coordinates ||
-    !destination.coordinates.lat ||
-    !destination.coordinates.lng
+    !destination.lat ||
+    !destination.lng
   ) {
     shipment.eta = null; // fallback if coordinates missing
     await shipment.save();
     return shipment;
   }
 
-  const distance = await haversineDistance(current.coordinates, destination.coordinates);
+  const distance = await haversineDistance(current.coordinates, destination);
 
   const avgSpeed = 60; // km/h
   const hours = distance / avgSpeed;

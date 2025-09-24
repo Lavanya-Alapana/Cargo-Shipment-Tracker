@@ -18,24 +18,6 @@ const RouteSchema=new mongoose.Schema({
 },{_id:false})
 
 
-const CurrentLocationSchema=new mongoose.Schema({
-
-
-    location:{
-        type:String,
-       required:true
-    },
-    coordinates:{
-        lat:{type:Number},
-        lng:{type:Number}
-    },
-    updatedAt:{
-        type:Date,
-        default:Date.now
-    }
-    
-},{_id:false})
-
 const ShipmentSchema=new mongoose.Schema({
     shipmentId:{
         type:String,
@@ -52,14 +34,22 @@ const ShipmentSchema=new mongoose.Schema({
       type: String,
       required: true,
     },
+    originCoordinates: {
+  lat: Number,
+  lng: Number
+},
+
     destination: {
       type: String,
       required: true,
     },
+    destinationCoordinates: {
+    lat: Number,
+    lng: Number
+  },
     routes:[RouteSchema ],
 
-    currentLocation:CurrentLocationSchema,
-    
+   
     eta:{
         type:Date
     },

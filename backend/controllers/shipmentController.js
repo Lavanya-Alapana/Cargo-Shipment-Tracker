@@ -4,9 +4,11 @@ const {successResponse }= require('../src/utils/apiResponse');
 const logger = require('../src/utils/logger');
 
 const addShipment = asyncHandler(async (req, res) => {
-  const { containerId, shipmentId, origin, destination, status, routes, currentLocation } = req.body;
+  const { containerId, shipmentId, origin, destination, status, routes,originCoordinates, destinationCoordinates } = req.body;
   const shipment = await shipmentService.createShipment({
-    containerId, shipmentId, origin, destination, status, routes, currentLocation
+    containerId, shipmentId, origin, destination, status,originCoordinates, destinationCoordinates,routes: originCoordinates
+      ? [{ location: origin, coordinates: originCoordinates, timestamp: new Date() }]
+      : []
   });
 
   logger.info(`New shipment created: ${shipmentId} from ${origin} to ${destination}`);
@@ -46,7 +48,7 @@ const calculateETA = asyncHandler(async (req, res) => {
   const shipment = await shipmentService.getETA(id);
 
   logger.info(`ETA calculated for shipment ID: ${id}`);
-  return successResponse(res, 200, "ETA calculated", { shipment });
+  return successResponse(res, 200, "ETA calculated", {eta: shipment.eta });
 });
 
 module.exports = { fetchShipments, fetchShipmentById, updateLocation, calculateETA, addShipment };
