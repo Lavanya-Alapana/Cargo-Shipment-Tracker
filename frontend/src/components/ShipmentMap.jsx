@@ -1,8 +1,8 @@
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from "react-leaflet";
 import L from "leaflet";
-import { getETA } from "../features/shipments/ShipmentSlice";
-import {useDispatch,useSelector} from 'react-redux'
+import { useShipments } from "../hooks/useShipments";
 import { useEffect } from "react";
+
 // Icon for route points
 const routeIcon = new L.Icon({
   iconUrl: "https://cdn-icons-png.flaticon.com/512/684/684908.png",
@@ -20,14 +20,13 @@ export default function ShipmentMap({ shipment }) {
     return <p>No route available</p>;
   }
 
-  const dispatch = useDispatch();
-  const { eta, loading, error } = useSelector((state) => state.shipments);
+  const { eta, loading, error, getETA } = useShipments();
 
   useEffect(() => {
     if (shipment?._id) {
-      dispatch(getETA(shipment._id));
+      getETA(shipment._id);
     }
-  }, [shipment, dispatch]);
+  }, [shipment, getETA]);
 
   // All route coordinates
   const positions = shipment.routes.map((r) => [r.coordinates.lat, r.coordinates.lng]);

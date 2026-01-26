@@ -8,6 +8,7 @@ const config = {
   LOG_LEVEL: process.env.LOG_LEVEL || "info",
   LOG_FILE_PATH: process.env.LOG_FILE_PATH || "./logs/app.log",
   AVG_SPEED: process.env.AVG_SPEED || 60,
+  JWT_SECRET: process.env.JWT_SECRET || "your_jwt_secret_key_12345",
 };
 
 module.exports = { ...config };
