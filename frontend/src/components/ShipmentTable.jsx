@@ -1,8 +1,8 @@
-
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapPin, Package, Clock, AlertCircle, CheckCircle, Truck, MoreVertical, Eye, Edit2 } from "lucide-react";
 import ShipmentMap from "./ShipmentMap";
-import UpdateLocationForm from "./UpdateLocation";
+import { useAuth } from "../context/AuthContext";
 
 const StatusBadge = ({ status }) => {
   const statusConfig = {
@@ -46,30 +46,35 @@ const StatusBadge = ({ status }) => {
   );
 };
 
-export default function ShipmentTable({ shipments = [] }) {
+export default function ShipmentTable({ shipments = [], selectable = false, onSelectionChange }) {
   const [selectedShipment, setSelectedShipment] = useState(null);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
-  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const [shipmentToUpdate, setShipmentToUpdate] = useState(null);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleViewMap = (shipment) => {
-    setSelectedShipment(shipment);
-    setIsMapModalOpen(true);
+  const handleCheckboxChange = (shipmentId) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(shipmentId)) {
+      newSelected.delete(shipmentId);
+    } else {
+      newSelected.add(shipmentId);
+    }
+    setSelectedIds(newSelected);
+
+    // Notify parent of selected shipment objects
+    if (onSelectionChange) {
+      const selectedObjects = shipments.filter(s => newSelected.has(s._id));
+      onSelectionChange(selectedObjects);
+    }
   };
 
-  const handleUpdateLocation = (shipment) => {
-    setShipmentToUpdate(shipment);
-    setIsUpdateModalOpen(true);
+  const handleViewMap = (shipment) => {
+    navigate(`/track/${shipment.shipmentId}`);
   };
 
   const closeModal = () => {
     setIsMapModalOpen(false);
-    setIsUpdateModalOpen(false);
-  };
-
-  const handleLocationUpdated = (updatedShipment) => {
-    setSelectedShipment(updatedShipment);
-    setIsUpdateModalOpen(false);
   };
 
   if (!shipments || shipments.length === 0) {
@@ -89,6 +94,11 @@ export default function ShipmentTable({ shipments = [] }) {
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50/50">
           <tr>
+            {selectable && (
+              <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider w-4">
+                <span className="sr-only">Select</span>
+              </th>
+            )}
             <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Shipment ID</th>
             <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Container</th>
             <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
@@ -99,6 +109,16 @@ export default function ShipmentTable({ shipments = [] }) {
         <tbody className="bg-white divide-y divide-gray-100">
           {shipments.map((shipment) => (
             <tr key={shipment.shipmentId} className="hover:bg-gray-50/80 transition-colors duration-150 group">
+              {selectable && (
+                <td className="px-6 py-4 whitespace-nowrap w-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(shipment._id)}
+                    onChange={() => handleCheckboxChange(shipment._id)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                </td>
+              )}
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="flex items-center">
                   <div className="flex-shrink-0 h-10 w-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
@@ -111,8 +131,8 @@ export default function ShipmentTable({ shipments = [] }) {
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
-                <span className="text-sm text-gray-600 font-mono bg-gray-50 px-2 py-1 rounded border border-gray-200">
-                  {shipment.containerId}
+                <span className={`text-sm font-mono px-2 py-1 rounded border ${shipment.containerId ? 'bg-gray-50 border-gray-200 text-gray-600' : 'bg-yellow-50 border-yellow-200 text-yellow-700'}`}>
+                  {shipment.containerId || 'Unassigned'}
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
@@ -132,20 +152,13 @@ export default function ShipmentTable({ shipments = [] }) {
                 </div>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <div className="flex items-center justify-end space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="flex items-center justify-end space-x-2  group-hover:opacity-100 transition-opacity duration-200">
                   <button
                     onClick={() => handleViewMap(shipment)}
-                    className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
+                    className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-colors"
                     title="Track Shipment"
                   >
-                    <Eye className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleUpdateLocation(shipment)}
-                    className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-full transition-colors"
-                    title="Update Location"
-                  >
-                    <Edit2 className="w-4 h-4" />
+                    Track
                   </button>
                 </div>
               </td>
@@ -198,7 +211,7 @@ export default function ShipmentTable({ shipments = [] }) {
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 uppercase">Container ID</p>
-                          <p className="text-base font-mono text-gray-900 mt-1">{selectedShipment.containerId}</p>
+                          <p className="text-base font-mono text-gray-900 mt-1">{selectedShipment.containerId || 'Pending Assignment'}</p>
                         </div>
                       </div>
                     </div>
@@ -217,30 +230,6 @@ export default function ShipmentTable({ shipments = [] }) {
         </div>
       )}
 
-      {/* Update Location Modal */}
-      {isUpdateModalOpen && shipmentToUpdate && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex items-center justify-center min-h-screen p-4">
-            <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity" onClick={closeModal}></div>
-            <div className="relative bg-white rounded-xl shadow-xl w-full max-w-md mx-auto overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                <h3 className="text-lg font-semibold text-gray-900">Update Location</h3>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-500">
-                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <div className="p-6">
-                <UpdateLocationForm
-                  shipmentId={shipmentToUpdate.shipmentId}
-                  onUpdate={handleLocationUpdated}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

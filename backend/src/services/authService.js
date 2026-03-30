@@ -130,9 +130,15 @@ const changePassword = async (userId, currentPassword, newPassword) => {
     };
 };
 
+const getDrivers = async () => {
+    const drivers = await User.find({ role: 'DRIVER' }).select('-password');
+    return drivers;
+};
+
 module.exports = {
     registerUser,
     loginUser,
     createDriver,
     changePassword,
+    getDrivers,
 };

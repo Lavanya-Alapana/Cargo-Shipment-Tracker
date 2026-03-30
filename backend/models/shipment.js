@@ -27,7 +27,7 @@ const ShipmentSchema = new mongoose.Schema({
   },
   containerId: {
     type: String,
-    required: true,
+    required: false,
     trim: true
   },
   origin: {
@@ -47,6 +47,14 @@ const ShipmentSchema = new mongoose.Schema({
     lat: Number,
     lng: Number
   },
+  weight: {
+    type: Number,
+    required: false
+  },
+  description: {
+    type: String,
+    required: false
+  },
   routes: [RouteSchema],
 
 
@@ -57,6 +65,11 @@ const ShipmentSchema = new mongoose.Schema({
     type: String,
     enum: ["Pending", "In Transit", "Delayed", "Delivered", "Cancelled"],
     default: "Pending"
+  },
+  userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
   },
 
 },

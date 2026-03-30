@@ -4,9 +4,11 @@ const { successResponse } = require('../src/utils/apiResponse');
 const logger = require('../src/utils/logger');
 
 const addShipment = asyncHandler(async (req, res) => {
-    const { containerId, shipmentId, origin, destination, status, routes, originCoordinates, destinationCoordinates } = req.body;
+    const { containerId, shipmentId, origin, destination, status, routes, originCoordinates, destinationCoordinates, weight, description } = req.body;
     const shipment = await shipmentService.createShipment({
-        containerId, shipmentId, origin, destination, status, originCoordinates, destinationCoordinates, routes: originCoordinates
+        containerId, shipmentId, origin, destination, status, originCoordinates, destinationCoordinates, weight, description,
+        userId: req.user._id,
+        routes: originCoordinates
             ? [{ location: origin, coordinates: originCoordinates, timestamp: new Date() }]
             : []
     });
@@ -16,7 +18,14 @@ const addShipment = asyncHandler(async (req, res) => {
 });
 
 const fetchShipments = asyncHandler(async (req, res) => {
-    const shipments = await shipmentService.getShipments();
+    let query = {};
+    if (req.user.role === 'USER') {
+        query.userId = req.user._id;
+    }
+    if (req.query.unassigned === 'true') {
+        query.containerId = { $exists: false };
+    }
+    const shipments = await shipmentService.getShipments(query);
     const message = shipments.length == 0 ? "No shipment found" : "Shipments fetched successfully";
 
     logger.info(`Fetched ${shipments.length} shipments`);

@@ -91,12 +91,14 @@ export default function Layout({ children }) {
                             active={isActive('/')}
                             onClick={() => handleNavigation('/')}
                         />
-                        <SidebarItem
-                            icon={Package}
-                            label="Shipments"
-                            active={isActive('/shipments')}
-                            onClick={() => handleNavigation('/shipments')}
-                        />
+                        {user?.role === 'ADMIN' && (
+                            <SidebarItem
+                                icon={Package}
+                                label="Shipments"
+                                active={isActive('/shipments')}
+                                onClick={() => handleNavigation('/shipments')}
+                            />
+                        )}
                         {user?.role === 'ADMIN' && (
                             <SidebarItem
                                 icon={BarChart3}
@@ -168,7 +170,7 @@ export default function Layout({ children }) {
                         <div className="h-8 w-px bg-primary-200 mx-2"></div>
                         <div className="flex items-center space-x-2 cursor-pointer">
                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary-600 to-primary-800 flex items-center justify-center text-white text-sm font-bold shadow-sm">
-                                A
+                                {user?.name?.charAt(0).toUpperCase() || 'U'}
                             </div>
                             <ChevronDown className="w-4 h-4 text-gray-500" />
                         </div>

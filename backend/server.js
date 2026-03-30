@@ -20,6 +20,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes)
 app.use('/api', shipmentRoutes)
+app.use('/api', require('./routes/containerRoutes'))
 
 app.get('/test', (req, res) => res.send("testing completed"))
 

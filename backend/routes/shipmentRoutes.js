@@ -3,11 +3,12 @@ const { handler } = require('../controllers/geocodeController')
 const express = require('express')
 const router = express.Router()
 
+const { protect, authorize } = require('../middleware/authMiddleware')
 
-router.post('/shipment', addShipment)
-router.get('/shipments', fetchShipments)
-router.get('/shipment/:id', fetchShipmentById)
-router.post('/shipment/:id/update-location', updateLocation)
+router.post('/shipment', protect, addShipment)
+router.get('/shipments', protect, fetchShipments)
+router.get('/shipment/:id', protect, fetchShipmentById)
+router.post('/shipment/:id/update-location', protect, authorize('ADMIN', 'DRIVER'), updateLocation)
 router.get('/shipment/:id/eta', calculateETA)
 
 

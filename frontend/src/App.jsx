@@ -3,6 +3,7 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Shipments from "./pages/Shipments";
 import Analytics from "./pages/Analytics";
+import TrackShipment from "./pages/TrackShipment";
 import Login from "./pages/Auth/Login";
 import Register from "./pages/Auth/Register";
 import ChangePassword from "./pages/Auth/ChangePassword";
@@ -26,6 +27,7 @@ function App() {
                   <Routes>
                     <Route path="/" element={<Dashboard />} />
                     <Route path="/shipments" element={<Shipments />} />
+                    <Route path="/track/:id" element={<TrackShipment />} />
                     <Route
                       path="/analytics"
                       element={

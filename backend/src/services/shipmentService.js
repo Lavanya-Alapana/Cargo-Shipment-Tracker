@@ -13,8 +13,8 @@ async function createShipment(payload) {
     return newShipment;
 }
 
-async function getShipments() {
-    const shipmentAll = await Shipment.find()
+async function getShipments(query = {}) {
+    const shipmentAll = await Shipment.find(query)
     return shipmentAll
 }
 

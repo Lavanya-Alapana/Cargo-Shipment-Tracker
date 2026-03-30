@@ -1,17 +1,16 @@
 import { useState } from "react";
 import axios from "axios";
-import { Package, Truck, MapPin, Tag, Loader2, X, Calendar, Box, Info } from 'lucide-react';
+import { Package, Truck, MapPin, Tag, Loader2, X, Calendar, Box, Info, Scale, FileText } from 'lucide-react';
 
 export default function ShipmentForm({ onAdd }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    containerId: "",
-    shipmentId: "",
     origin: "",
     destination: "",
+    weight: "",
+    description: "",
     status: "Pending",
-    originCoordinates: null,
-    destinationCoordinates: null,
+    expectedDeliveryDate: "",
   });
 
   const handleChange = (e) => {
@@ -29,14 +28,18 @@ export default function ShipmentForm({ onAdd }) {
         `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
       );
       if (!res.data || res.data.length === 0) return null;
-      return { 
-        lat: parseFloat(res.data[0]?.lat), 
-        lng: parseFloat(res.data[0]?.lon) 
+      return {
+        lat: parseFloat(res.data[0]?.lat),
+        lng: parseFloat(res.data[0]?.lon)
       };
     } catch (err) {
       console.error("Geocoding error:", err);
       return null;
     }
+  };
+
+  const generateId = (prefix) => {
+    return `${prefix}-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`;
   };
 
   const handleSubmit = async (e) => {
@@ -57,23 +60,24 @@ export default function ShipmentForm({ onAdd }) {
 
       const shipmentWithCoords = {
         ...formData,
+        shipmentId: generateId('SHIP'),
         originCoordinates,
         destinationCoordinates,
         lastUpdated: new Date().toISOString()
       };
 
       await onAdd(shipmentWithCoords);
-      
+
       // Reset form on success
       setFormData({
-        containerId: "",
-        shipmentId: "",
         origin: "",
         destination: "",
+        weight: "",
+        description: "",
         status: "Pending",
-        originCoordinates: null,
-        destinationCoordinates: null,
+        expectedDeliveryDate: "",
       });
+      alert(`Shipment Created Successfully! ID: ${shipmentWithCoords.shipmentId}`);
     } catch (err) {
       console.error("Error adding shipment:", err);
       alert("Failed to add shipment. Please try again.");
@@ -98,46 +102,46 @@ export default function ShipmentForm({ onAdd }) {
       <div className={cardClass}>
         <h3 className={sectionTitleClass}>
           <Info className={iconClass} />
-          Basic Information
+          Parcel Details
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label htmlFor="containerId" className={labelClass}>
-              Container ID
+            <label htmlFor="weight" className={labelClass}>
+              Weight (kg)
             </label>
             <div className="relative mt-1">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                <Package className="h-4 w-4 text-gray-400" />
+                <Scale className="h-4 w-4 text-gray-400" />
               </div>
               <input
-                type="text"
-                id="containerId"
-                name="containerId"
-                value={formData.containerId}
+                type="number"
+                id="weight"
+                name="weight"
+                value={formData.weight}
                 onChange={handleChange}
                 className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm"
-                placeholder="CONT-12345"
+                placeholder="e.g. 5.5"
                 required
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="shipmentId" className={labelClass}>
-              Shipment ID
+            <label htmlFor="description" className={labelClass}>
+              Description
             </label>
             <div className="relative mt-1">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                <Tag className="h-4 w-4 text-gray-400" />
+                <FileText className="h-4 w-4 text-gray-400" />
               </div>
               <input
                 type="text"
-                id="shipmentId"
-                name="shipmentId"
-                value={formData.shipmentId}
+                id="description"
+                name="description"
+                value={formData.description}
                 onChange={handleChange}
                 className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm"
-                placeholder="SHIP-67890"
+                placeholder="e.g. Electronics"
                 required
               />
             </div>
@@ -154,7 +158,7 @@ export default function ShipmentForm({ onAdd }) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label htmlFor="origin" className={labelClass}>
-              Origin
+              Pickup Location
             </label>
             <div className="relative mt-1">
               <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
@@ -196,59 +200,6 @@ export default function ShipmentForm({ onAdd }) {
         </div>
       </div>
 
-      {/* Status & Additional Info */}
-      <div className={cardClass}>
-        <h3 className={sectionTitleClass}>
-          <Truck className={iconClass} />
-          Status & Details
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="status" className={labelClass}>
-              Shipment Status
-            </label>
-            <div className="relative mt-1">
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                className="block w-full pl-3 pr-8 py-2 text-sm border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500 rounded-md"
-                required
-              >
-                <option value="Pending">Pending</option>
-                <option value="In Transit">In Transit</option>
-                <option value="Delivered">Delivered</option>
-              </select>
-              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400">
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                </svg>
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <label htmlFor="date" className={labelClass}>
-              Expected Delivery Date
-            </label>
-            <div className="relative mt-1">
-              <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
-                <Calendar className="h-4 w-4 text-gray-400" />
-              </div>
-              <input
-                type="date"
-                id="expectedDeliveryDate"
-                name="expectedDeliveryDate"
-                value={formData.expectedDeliveryDate || ''}
-                onChange={handleChange}
-                className="block w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-100 focus:border-blue-500 text-sm"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Form Actions */}
       <div className="flex justify-end space-x-2 pt-1">
         <button
@@ -270,7 +221,7 @@ export default function ShipmentForm({ onAdd }) {
               Saving...
             </>
           ) : (
-            'Save Shipment'
+            'Send Parcel'
           )}
         </button>
       </div>

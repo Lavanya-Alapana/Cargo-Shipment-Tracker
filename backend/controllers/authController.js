@@ -41,10 +41,19 @@ const changePassword = asyncHandler(async (req, res) => {
     res.status(200).json(userData);
 });
 
+// @desc    Get all drivers
+// @route   GET /api/auth/drivers
+// @access  Private (Admin)
+const getDrivers = asyncHandler(async (req, res) => {
+    const drivers = await authService.getDrivers();
+    res.status(200).json(drivers);
+});
+
 module.exports = {
     registerUser,
     loginUser,
     getMe,
     createDriver,
     changePassword,
+    getDrivers,
 };

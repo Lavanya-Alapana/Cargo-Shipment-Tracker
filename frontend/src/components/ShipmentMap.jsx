@@ -29,7 +29,13 @@ export default function ShipmentMap({ shipment }) {
   }, [shipment, getETA]);
 
   // All route coordinates
-  const positions = shipment.routes.map((r) => [r.coordinates.lat, r.coordinates.lng]);
+  const positions = shipment.routes
+    .filter(r => r.coordinates && r.coordinates.lat && r.coordinates.lng)
+    .map((r) => [r.coordinates.lat, r.coordinates.lng]);
+
+  if (positions.length === 0) {
+    return <p>No valid route coordinates available</p>;
+  }
 
   // Current location is the last point in the route
   const currentLocation = positions[positions.length - 1];
@@ -42,14 +48,17 @@ export default function ShipmentMap({ shipment }) {
       />
 
       {/* Markers for all route points */}
-      {shipment.routes.map((r, idx) => (
-        <Marker key={idx} position={[r.coordinates.lat, r.coordinates.lng]} icon={routeIcon}>
-          <Popup>
-            <b>Location:</b> {r.location} <br />
-            <b>Timestamp:</b> {new Date(r.timestamp).toLocaleString()}
-          </Popup>
-        </Marker>
-      ))}
+      {shipment.routes.map((r, idx) => {
+        if (!r.coordinates || !r.coordinates.lat || !r.coordinates.lng) return null;
+        return (
+          <Marker key={idx} position={[r.coordinates.lat, r.coordinates.lng]} icon={routeIcon}>
+            <Popup>
+              <b>Location:</b> {r.location} <br />
+              <b>Timestamp:</b> {new Date(r.timestamp).toLocaleString()}
+            </Popup>
+          </Marker>
+        );
+      })}
 
       {/* Marker for current location (last route point) */}
       <Marker position={currentLocation} icon={currentIcon}>
